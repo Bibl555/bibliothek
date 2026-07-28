@@ -11,11 +11,8 @@
   <meta name="apple-mobile-web-app-title" content="Bibliothek">
   <link rel="apple-touch-icon" href="https://img.icons8.com/fluent/180/000000/book.png">
 
-  <!-- External Libraries: Tailwind CSS, FontAwesome, Supabase, JsBarcode -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
   <script>
     tailwind.config = {
@@ -47,262 +44,80 @@
     }
     .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
     .pt-safe { padding-top: env(safe-area-inset-top, 20px); }
-    .card-gradient {
-      background: linear-gradient(135deg, #007AFF 0%, #0040DD 100%);
-    }
   </style>
 </head>
 <body class="bg-ios-bg text-ios-darkText min-h-screen flex flex-col justify-between select-none">
 
   <!-- Header -->
-  <header class="bg-ios-card border-b border-gray-200 sticky top-0 z-20 pt-safe px-4 pb-3 shadow-sm flex justify-between items-center max-w-md mx-auto w-full">
-    <div>
+  <header class="bg-ios-card border-b border-gray-200 sticky top-0 z-20 pt-safe px-4 pb-3 shadow-sm">
+    <div class="max-w-md mx-auto text-center">
       <h1 class="text-xl font-bold tracking-tight">Stadtbibliothek</h1>
-      <p class="text-xs text-ios-gray">Öffnungszeiten & Konto</p>
-    </div>
-    <div id="header-user-status">
-      <button onclick="switchTab('account')" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-ios-bg text-ios-blue hover:bg-blue-50 transition">
-        <i class="fa-solid fa-user-circle text-base"></i>
-        <span id="header-user-text">Konto</span>
-      </button>
+      <p class="text-xs text-ios-gray">Aktuelle Öffnungszeiten</p>
     </div>
   </header>
 
-  <!-- Hauptinhalt Container -->
-  <main class="flex-grow max-w-md w-full mx-auto p-4 space-y-4">
+  <!-- Hauptinhalt -->
+  <main class="flex-grow max-w-md w-full mx-auto p-4 space-y-5">
 
-    <!-- Navigation Tabs -->
-    <div class="grid grid-cols-2 bg-gray-200 p-1 rounded-xl text-xs font-medium text-center">
-      <button id="tab-btn-hours" onclick="switchTab('hours')" class="py-2 rounded-lg bg-white shadow-sm font-bold text-ios-darkText transition-all">
-        <i class="fa-solid fa-clock mr-1"></i> Öffnungszeiten
+    <!-- Live Status Card -->
+    <div id="status-card" class="rounded-2xl p-5 text-white shadow-md transition-all duration-300">
+      <div class="flex justify-between items-start">
+        <div>
+          <span id="status-badge" class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 bg-white/20 backdrop-blur-md">
+            Status laden...
+          </span>
+          <h2 id="status-title" class="text-2xl font-bold">...</h2>
+        </div>
+        <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl">
+          <i id="status-icon" class="fa-solid fa-clock"></i>
+        </div>
+      </div>
+      <p id="status-subtitle" class="text-sm mt-3 opacity-90">Analyse der Öffnungszeiten...</p>
+    </div>
+
+    <!-- Push-Benachrichtigung Button / status -->
+    <div id="notification-card" class="bg-ios-card rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-blue-50 text-ios-blue flex items-center justify-center text-lg">
+          <i class="fa-solid fa-bell"></i>
+        </div>
+        <div>
+          <h4 class="font-bold text-xs">Schließ-Erinnerung</h4>
+          <p class="text-[11px] text-ios-gray" id="notif-status-text">Erinnerung 20 Min. vor Schluss</p>
+        </div>
+      </div>
+      <button id="notif-btn" onclick="requestNotificationPermission()" class="px-3 py-1.5 bg-ios-blue text-white rounded-xl text-xs font-semibold shadow-sm hover:bg-blue-600 transition">
+        Aktivieren
       </button>
-      <button id="tab-btn-account" onclick="switchTab('account')" class="py-2 rounded-lg text-ios-gray hover:text-ios-darkText transition-all">
-        <i class="fa-solid fa-id-card mr-1"></i> Mein Konto
-      </button>
     </div>
 
-    <!-- TAB 1: ÖFFNUNGSZEITEN & PUSH -->
-    <div id="tab-hours" class="space-y-4">
-
-      <!-- Live Status Card -->
-      <div id="status-card" class="rounded-2xl p-5 text-white shadow-md transition-all duration-300">
-        <div class="flex justify-between items-start">
-          <div>
-            <span id="status-badge" class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 bg-white/20 backdrop-blur-md">
-              Status laden...
-            </span>
-            <h2 id="status-title" class="text-2xl font-bold">...</h2>
-          </div>
-          <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl">
-            <i id="status-icon" class="fa-solid fa-clock"></i>
-          </div>
-        </div>
-        <p id="status-subtitle" class="text-sm mt-3 opacity-90">Analyse der Öffnungszeiten...</p>
+    <!-- Wochenübersicht -->
+    <div class="bg-ios-card rounded-2xl p-4 shadow-sm border border-gray-100">
+      <h3 class="font-bold text-base mb-3 flex items-center gap-2">
+        <i class="fa-regular fa-calendar-alt text-ios-blue"></i>
+        Öffnungszeiten diese Woche
+      </h3>
+      <div id="hours-list" class="space-y-2 text-sm">
+        <!-- Dynamisch befüllt -->
       </div>
-
-      <!-- Push-Benachrichtigung Card -->
-      <div id="notification-card" class="bg-ios-card rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-blue-50 text-ios-blue flex items-center justify-center text-lg">
-            <i class="fa-solid fa-bell"></i>
-          </div>
-          <div>
-            <h4 class="font-bold text-xs">Schließ-Erinnerung</h4>
-            <p class="text-[11px] text-ios-gray" id="notif-status-text">Erinnerung 20 Min. vor Schluss</p>
-          </div>
-        </div>
-        <button id="notif-btn" onclick="requestNotificationPermission()" class="px-3 py-1.5 bg-ios-blue text-white rounded-xl text-xs font-semibold shadow-sm hover:bg-blue-600 transition">
-          Aktivieren
-        </button>
-      </div>
-
-      <!-- Wochenübersicht -->
-      <div class="bg-ios-card rounded-2xl p-4 shadow-sm border border-gray-100">
-        <h3 class="font-bold text-base mb-3 flex items-center gap-2">
-          <i class="fa-regular fa-calendar-alt text-ios-blue"></i>
-          Öffnungszeiten diese Woche
-        </h3>
-        <div id="hours-list" class="space-y-2 text-sm">
-          <!-- Dynamisch befüllt -->
-        </div>
-      </div>
-
     </div>
 
-    <!-- TAB 2: MEIN KONTO / AUTHENTIFIZIERUNG -->
-    <div id="tab-account" class="space-y-4 hidden">
-
-      <!-- UNLOGIN STATE: Login & Registrieren Formular -->
-      <div id="auth-container" class="bg-ios-card rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
-        <div class="text-center">
-          <div class="w-12 h-12 rounded-full bg-blue-50 text-ios-blue flex items-center justify-center text-xl mx-auto mb-2">
-            <i class="fa-solid fa-user-lock"></i>
-          </div>
-          <h3 class="text-lg font-bold">Konto & Ausweis</h3>
-          <p class="text-xs text-ios-gray">Melden Sie sich an, um Ihren digitalen Bibliotheksausweis zu nutzen.</p>
-        </div>
-
-        <!-- Auth Sub-Tabs -->
-        <div class="flex border-b border-gray-200 text-xs text-center font-medium">
-          <button id="auth-tab-login" onclick="toggleAuthForm('login')" class="flex-1 py-2 border-b-2 border-ios-blue font-bold text-ios-blue">Anmelden</button>
-          <button id="auth-tab-register" onclick="toggleAuthForm('register')" class="flex-1 py-2 text-ios-gray">Registrieren</button>
-        </div>
-
-        <!-- Login Formular -->
-        <form id="form-login" onsubmit="handleLogin(event)" class="space-y-3">
-          <div>
-            <label class="block text-xs font-semibold text-ios-gray mb-1">E-Mail Adresse</label>
-            <input type="email" id="login-email" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-ios-gray mb-1">Passwort</label>
-            <input type="password" id="login-password" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue">
-          </div>
-          <button type="submit" class="w-full py-2.5 bg-ios-blue text-white font-semibold rounded-xl text-xs shadow hover:bg-blue-600 transition">
-            Anmelden
-          </button>
-        </form>
-
-        <!-- Registrierung Formular -->
-        <form id="form-register" onsubmit="handleRegister(event)" class="space-y-3 hidden">
-          <div>
-            <label class="block text-xs font-semibold text-ios-gray mb-1">Vor- & Nachname</label>
-            <input type="text" id="reg-name" required placeholder="z. B. Erika Mustermann" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-ios-gray mb-1">E-Mail Adresse</label>
-            <input type="email" id="reg-email" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-ios-gray mb-1">Passwort</label>
-            <input type="password" id="reg-password" minlength="6" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue">
-          </div>
-          <button type="submit" class="w-full py-2.5 bg-ios-blue text-white font-semibold rounded-xl text-xs shadow hover:bg-blue-600 transition">
-            Registrieren
-          </button>
-        </form>
-
-        <!-- Demo Login Shortcut -->
-        <div class="pt-2 border-t border-gray-100 text-center">
-          <p class="text-[11px] text-ios-gray mb-2">Schnellzugriff ohne Supabase-Konto:</p>
-          <button onclick="loginDemoUser()" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-ios-darkText rounded-lg text-xs font-medium transition">
-            <i class="fa-solid fa-vial mr-1 text-ios-blue"></i> Demo-Konto nutzen
-          </button>
-        </div>
-      </div>
-
-      <!-- LOGGED IN STATE: Digitaler Ausweis & Einstellungen -->
-      <div id="profile-container" class="space-y-4 hidden">
-        
-        <!-- Digitaler Ausweis Card -->
-        <div class="card-gradient rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
-          <!-- Background decoration -->
-          <div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white/10 blur-xl"></div>
-          
-          <div class="flex justify-between items-center mb-4 border-b border-white/20 pb-3">
-            <div class="flex items-center gap-2">
-              <i class="fa-solid fa-book-bookmark text-xl"></i>
-              <span class="font-bold text-sm tracking-wider uppercase">Bibliotheksausweis</span>
-            </div>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-400 text-slate-900 uppercase">Aktiv</span>
-          </div>
-
-          <div class="space-y-1 mb-4">
-            <p class="text-[10px] opacity-75 uppercase tracking-wider">Inhaber</p>
-            <h3 id="card-user-name" class="text-xl font-bold">Max Mustermann</h3>
-            <p id="card-user-email" class="text-xs opacity-90 font-mono">max@example.com</p>
-          </div>
-
-          <!-- Barcode Generation Area -->
-          <div class="bg-white p-3 rounded-xl flex flex-col items-center justify-center text-slate-900 shadow-inner">
-            <svg id="barcode" class="w-full h-14"></svg>
-            <span id="card-user-id" class="text-[11px] font-mono tracking-widest text-gray-600 mt-0.5">BIB-10029384</span>
-          </div>
-
-          <div class="mt-3 flex justify-between items-center text-[11px] opacity-80">
-            <span>Stadtbibliothek e.V.</span>
-            <span>Gültig bis: 12/2028</span>
-          </div>
-        </div>
-
-        <!-- Kontoeinstellungen Card -->
-        <div class="bg-ios-card rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
-          <h3 class="font-bold text-sm text-ios-darkText border-b pb-2 flex items-center gap-2">
-            <i class="fa-solid fa-sliders text-ios-blue"></i> Kontoeinstellungen
-          </h3>
-
-          <form onsubmit="handleUpdateProfile(event)" class="space-y-3 text-xs">
-            <div>
-              <label class="block text-ios-gray font-semibold mb-1">Name anpassen</label>
-              <input type="text" id="setting-name" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-ios-blue">
-            </div>
-            <button type="submit" class="px-4 py-2 bg-ios-blue text-white font-semibold rounded-xl hover:bg-blue-600 transition">
-              Name speichern
-            </button>
-          </form>
-
-          <div class="pt-3 border-t border-gray-100 flex justify-between items-center">
-            <span class="text-xs text-ios-gray">Konto-Status</span>
-            <span class="text-xs font-semibold text-green-600">Verifiziert</span>
-          </div>
-
-          <button onclick="handleLogout()" class="w-full py-2.5 bg-red-50 text-ios-red font-semibold rounded-xl text-xs hover:bg-red-100 transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-right-from-bracket"></i> Abmelden
-          </button>
-        </div>
-
-      </div>
-
-    </div>
-
-    <!-- Hinweis auf Entwicklungs-Status -->
-    <div class="bg-ios-card rounded-2xl p-4 border border-gray-100 text-center space-y-1 mt-4">
+    <!-- Hinweis auf zukünftige Entwicklung -->
+    <div class="bg-ios-card rounded-2xl p-4 border border-gray-100 text-center space-y-1 mt-6">
       <div class="text-ios-blue text-lg"><i class="fa-solid fa-code"></i></div>
       <p class="text-xs font-bold text-ios-darkText">Hinweis zur App</p>
-      <p class="text-xs text-ios-gray">Ihre Daten bleiben sicher geschützt. Ausweis-Barcode direkt an der Kasse vorzeigen.</p>
+      <p class="text-xs text-ios-gray">Diese App wird demnächst weiterentwickelt. Weitere Funktionen folgen in Kürze!</p>
     </div>
 
   </main>
-
-  <!-- Custom Notification Modal (No alert()) -->
-  <div id="toast-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center px-4 hidden transition-opacity">
-    <div class="bg-white rounded-2xl p-5 max-w-xs w-full text-center space-y-3 shadow-2xl">
-      <div id="toast-icon" class="text-3xl text-ios-blue">
-        <i class="fa-solid fa-circle-check"></i>
-      </div>
-      <h4 id="toast-title" class="font-bold text-base text-ios-darkText">Mitteilung</h4>
-      <p id="toast-message" class="text-xs text-ios-gray">Beschreibung der Nachricht...</p>
-      <button onclick="closeToast()" class="w-full py-2 bg-ios-blue text-white rounded-xl font-semibold text-xs">
-        OK
-      </button>
-    </div>
-  </div>
 
   <!-- Footer / Bottom Space -->
   <footer class="text-center py-4 text-[11px] text-ios-gray pb-safe">
     &copy; Stadtbibliothek
   </footer>
 
+  <!-- Logik für Öffnungszeiten & Push-Mitteilung -->
   <script>
-    /* SUPABASE KONFIGURATION
-       Hinweis: Ersetzen Sie SUPABASE_URL und SUPABASE_ANON_KEY mit Ihren Supabase-Projektdaten.
-       Wenn diese nicht angegeben sind, schaltet die App automatisch auf den funktionierenden Demo-Speicher um.
-    */
-    const SUPABASE_URL = "https://your-supabase-project.supabase.co";
-    const SUPABASE_ANON_KEY = "your-anon-key";
-
-    let supabaseClient = null;
-    let currentUser = null;
-
-    // Supabase Initialisierung prüfen
-    try {
-      if (SUPABASE_URL !== "https://your-supabase-project.supabase.co" && window.supabase) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      }
-    } catch (e) {
-      console.log("Supabase Standard-Fallback aktiv");
-    }
-
     // Öffnungszeiten Definition
     const openingHours = {
       1: { name: 'Montag', open: '17:00', close: '19:00', startH: 17, startM: 0, endH: 19, endM: 0 },
@@ -315,194 +130,6 @@
     };
 
     let notificationSentToday = false;
-
-    // Toast UI Ersatz für alert()
-    function showToast(title, message, iconClass = "fa-solid fa-circle-check text-ios-blue") {
-      document.getElementById('toast-title').innerText = title;
-      document.getElementById('toast-message').innerText = message;
-      document.getElementById('toast-icon').innerHTML = `<i class="${iconClass}"></i>`;
-      document.getElementById('toast-modal').classList.remove('hidden');
-    }
-
-    function closeToast() {
-      document.getElementById('toast-modal').classList.add('hidden');
-    }
-
-    // Navigation Tabs
-    function switchTab(tab) {
-      const hoursTab = document.getElementById('tab-hours');
-      const accountTab = document.getElementById('tab-account');
-      const hoursBtn = document.getElementById('tab-btn-hours');
-      const accountBtn = document.getElementById('tab-btn-account');
-
-      if (tab === 'hours') {
-        hoursTab.classList.remove('hidden');
-        accountTab.classList.add('hidden');
-        hoursBtn.className = "py-2 rounded-lg bg-white shadow-sm font-bold text-ios-darkText transition-all";
-        accountBtn.className = "py-2 rounded-lg text-ios-gray hover:text-ios-darkText transition-all";
-      } else {
-        hoursTab.classList.add('hidden');
-        accountTab.classList.remove('hidden');
-        accountBtn.className = "py-2 rounded-lg bg-white shadow-sm font-bold text-ios-darkText transition-all";
-        hoursBtn.className = "py-2 rounded-lg text-ios-gray hover:text-ios-darkText transition-all";
-      }
-    }
-
-    function toggleAuthForm(mode) {
-      const loginForm = document.getElementById('form-login');
-      const regForm = document.getElementById('form-register');
-      const loginTab = document.getElementById('auth-tab-login');
-      const regTab = document.getElementById('auth-tab-register');
-
-      if (mode === 'login') {
-        loginForm.classList.remove('hidden');
-        regForm.classList.add('hidden');
-        loginTab.className = "flex-1 py-2 border-b-2 border-ios-blue font-bold text-ios-blue";
-        regTab.className = "flex-1 py-2 text-ios-gray";
-      } else {
-        loginForm.classList.add('hidden');
-        regForm.classList.remove('hidden');
-        regTab.className = "flex-1 py-2 border-b-2 border-ios-blue font-bold text-ios-blue";
-        loginTab.className = "flex-1 py-2 text-ios-gray";
-      }
-    }
-
-    // Auth Handlers
-    async function handleLogin(e) {
-      e.preventDefault();
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-
-      if (supabaseClient) {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) {
-          showToast("Anmeldung fehlgeschlagen", error.message, "fa-solid fa-triangle-exclamation text-ios-red");
-          return;
-        }
-        currentUser = {
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.user_metadata?.full_name || email.split('@')[0],
-          cardId: 'BIB-' + data.user.id.substring(0, 8).toUpperCase()
-        };
-      } else {
-        // Fallback / Demo Modus
-        currentUser = {
-          id: 'usr_' + Math.random().toString(36).substr(2, 9),
-          email: email,
-          name: email.split('@')[0],
-          cardId: 'BIB-' + Math.floor(10000000 + Math.random() * 90000000)
-        };
-      }
-
-      updateUserUI();
-      showToast("Willkommen zurück!", "Sie wurden erfolgreich angemeldet.");
-    }
-
-    async function handleRegister(e) {
-      e.preventDefault();
-      const name = document.getElementById('reg-name').value;
-      const email = document.getElementById('reg-email').value;
-      const password = document.getElementById('reg-password').value;
-
-      if (supabaseClient) {
-        const { data, error } = await supabaseClient.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name: name } }
-        });
-
-        if (error) {
-          showToast("Registrierung fehlgeschlagen", error.message, "fa-solid fa-triangle-exclamation text-ios-red");
-          return;
-        }
-
-        currentUser = {
-          id: data.user?.id || 'usr_new',
-          email: email,
-          name: name,
-          cardId: 'BIB-' + Math.floor(10000000 + Math.random() * 90000000)
-        };
-      } else {
-        currentUser = {
-          id: 'usr_' + Math.random().toString(36).substr(2, 9),
-          email: email,
-          name: name,
-          cardId: 'BIB-' + Math.floor(10000000 + Math.random() * 90000000)
-        };
-      }
-
-      updateUserUI();
-      showToast("Konto erstellt!", "Ihr Konto und Ihr Ausweis wurden erfolgreich angelegt.");
-    }
-
-    function loginDemoUser() {
-      currentUser = {
-        id: 'demo-12345678',
-        email: 'max.mustermann@beispiel.de',
-        name: 'Max Mustermann',
-        cardId: 'BIB-98765432'
-      };
-      updateUserUI();
-      showToast("Demo-Konto aktiv", "Sie nutzen jetzt das vorbereitete Demo-Konto.");
-    }
-
-    async function handleLogout() {
-      if (supabaseClient) {
-        await supabaseClient.auth.signOut();
-      }
-      currentUser = null;
-      updateUserUI();
-      showToast("Abgemeldet", "Sie haben sich erfolgreich aus Ihrem Konto ausgeloggt.");
-    }
-
-    function handleUpdateProfile(e) {
-      e.preventDefault();
-      const newName = document.getElementById('setting-name').value;
-      if (!newName.trim()) return;
-
-      if (currentUser) {
-        currentUser.name = newName;
-        updateUserUI();
-        showToast("Gespeichert", "Ihr Name wurde erfolgreich aktualisiert.");
-      }
-    }
-
-    function updateUserUI() {
-      const authContainer = document.getElementById('auth-container');
-      const profileContainer = document.getElementById('profile-container');
-      const headerUserText = document.getElementById('header-user-text');
-
-      if (currentUser) {
-        authContainer.classList.add('hidden');
-        profileContainer.classList.remove('hidden');
-        headerUserText.innerText = currentUser.name.split(' ')[0];
-
-        // Kartendaten setzen
-        document.getElementById('card-user-name').innerText = currentUser.name;
-        document.getElementById('card-user-email').innerText = currentUser.email;
-        document.getElementById('card-user-id').innerText = currentUser.cardId;
-        document.getElementById('setting-name').value = currentUser.name;
-
-        // Barcode mit JsBarcode rendern
-        try {
-          JsBarcode("#barcode", currentUser.cardId, {
-            format: "CODE128",
-            lineColor: "#000",
-            width: 1.8,
-            height: 45,
-            displayValue: false
-          });
-        } catch(err) {
-          console.log("Barcode konnte nicht erzeugt werden", err);
-        }
-
-      } else {
-        authContainer.classList.remove('hidden');
-        profileContainer.classList.add('hidden');
-        headerUserText.innerText = "Konto";
-      }
-    }
 
     function updateOpeningStatus() {
       const now = new Date();
@@ -551,7 +178,7 @@
           const nextDay = (currentDay + 1) % 7;
           const nextSchedule = openingHours[nextDay];
           subtitle.innerText = `Öffnet ${nextSchedule.name} um ${nextSchedule.open} Uhr.`;
-          notificationSentToday = false;
+          notificationSentToday = false; // Reset für den nächsten Tag
         }
       }
     }
@@ -593,7 +220,7 @@
         btn.disabled = true;
         btn.className = "px-3 py-1.5 bg-green-100 text-ios-green rounded-xl text-xs font-semibold cursor-default";
       } else if (Notification.permission === "denied") {
-        text.innerText = "Mitteilungen sind in den Einstellungen deaktiviert.";
+        text.innerText = "Mitteilungen sind in den iPhone-Einstellungen deaktiviert.";
         btn.classList.add('hidden');
       }
     }
@@ -626,7 +253,7 @@
       updateOpeningStatus();
       renderHoursList();
       checkNotificationStatus();
-      setInterval(updateOpeningStatus, 30000);
+      setInterval(updateOpeningStatus, 30000); // Alle 30 Sekunden prüfen
     };
   </script>
 </body>
