@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Stadtbibliothek Mobile</title>
+
+  <!-- PWA & iOS Home Screen Einstellungen -->
+  <meta name="apple-mobile-web-app-title" content="Bibliothek">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  
+  <!-- Automatisches App-Icon auf dem Home-Bildschirm -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%23007AFF'/><text x='50%' y='55%' font-size='90' text-anchor='middle' dominant-baseline='middle'>📚</text></svg>">
+  
+  <!-- Web App Manifest für Android & Chrome -->
+  <link rel="manifest" href='data:application/manifest+json,{"name":"Stadtbibliothek","short_name":"Bibliothek","start_url":".","display":"standalone","background_color":"#F2F2F7","theme_color":"#007AFF","icons":[{"src":"data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"192\" height=\"192\" viewBox=\"0 0 180 180\"><rect width=\"180\" height=\"180\" rx=\"40\" fill=\"%23007AFF\"/><text x=\"50%\" y=\"55%\" font-size=\"90\" text-anchor=\"middle\" dominant-baseline=\"middle\">📚</text></svg>","sizes":"192x192","type":"image/svg+xml"}]}'>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ios: {
+              bg: '#F2F2F7',
+              card: '#FFFFFF',
+              blue: '#007AFF',
+              green: '#34C759',
+              red: '#FF3B30',
+              orange: '#FF9500',
+              gray: '#8E8E93',
+              lightGray: '#E5E5EA',
+              darkText: '#000000',
+              subText: '#3C3C43'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+    .pt-safe { padding-top: env(safe-area-inset-top, 20px); }
+  </style>
+</head>
+<body class="bg-ios-bg text-ios-darkText min-h-screen flex flex-col justify-between select-none">
+
+  <!-- Header -->
+  <header class="bg-ios-card border-b border-gray-200 sticky top-0 z-20 pt-safe px-4 pb-3 shadow-sm">
+    <div class="max-w-md mx-auto text-center">
+      <h1 class="text-xl font-bold tracking-tight">Stadtbibliothek</h1>
+      <p class="text-xs text-ios-gray">Aktuelle Öffnungszeiten</p>
+    </div>
+  </header>
+
+  <!-- Hauptinhalt -->
+  <main class="flex-grow max-w-md w-full mx-auto p-4 space-y-5">
+
+    <!-- Live Status Card -->
+    <div id="status-card" class="rounded-2xl p-5 text-white shadow-md transition-all duration-300">
+      <div class="flex justify-between items-start">
+        <div>
+          <span id="status-badge" class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 bg-white/20 backdrop-blur-md">
+            Status laden...
+          </span>
+          <h2 id="status-title" class="text-2xl font-bold">...</h2>
+        </div>
+        <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl">
+          <i id="status-icon" class="fa-solid fa-clock"></i>
+        </div>
+      </div>
+      <p id="status-subtitle" class="text-sm mt-3 opacity-90">Analyse der Öffnungszeiten...</p>
+    </div>
+
+    <!-- Wochenübersicht -->
+    <div class="bg-ios-card rounded-2xl p-4 shadow-sm border border-gray-100">
+      <h3 class="font-bold text-base mb-3 flex items-center gap-2">
+        <i class="fa-regular fa-calendar-alt text-ios-blue"></i>
+        Öffnungszeiten diese Woche
+      </h3>
+      <div id="hours-list" class="space-y-2 text-sm">
+        <!-- Dynamisch befüllt -->
+      </div>
+    </div>
+
+    <!-- Hinweis zur Ausleihe & Rückgabe -->
+    <div class="bg-blue-50/60 border border-blue-100 rounded-2xl p-4 text-xs text-ios-subText flex gap-3 items-start">
+      <i class="fa-solid fa-circle-info text-ios-blue text-base mt-0.5"></i>
+      <div>
+        <span class="font-bold block text-sm text-ios-darkText mb-0.5">Rückgabe außerhalb der Zeiten</span>
+        Nutzen Sie den Bucheinwurf direkt neben dem Haupteingang für Rückgaben rund um die Uhr.
+      </div>
+    </div>
+
+    <!-- Hinweis auf zukünftige Entwicklung -->
+    <div class="bg-ios-card rounded-2xl p-4 border border-gray-100 text-center space-y-1 mt-6">
+      <div class="text-ios-blue text-lg"><i class="fa-solid fa-code"></i></div>
+      <p class="text-xs font-bold text-ios-darkText">Hinweis zur App</p>
+      <p class="text-xs text-ios-gray">Diese App wird demnächst weiterentwickelt. Weitere Funktionen folgen in Kürze!</p>
+    </div>
+
+  </main>
+
+  <!-- Footer / Bottom Space -->
+  <footer class="text-center py-4 text-[11px] text-ios-gray pb-safe">
+    &copy; Stadtbibliothek
+  </footer>
+
+  <!-- Logik für Öffnungszeiten -->
+  <script>
+    // Öffnungszeiten Definition
+    const openingHours = {
+      1: { name: 'Montag', open: '17:00', close: '19:00', startH: 17, startM: 0, endH: 19, endM: 0 },
+      2: { name: 'Dienstag', open: '17:00', close: '20:00', startH: 17, startM: 0, endH: 20, endM: 0 },
+      3: { name: 'Mittwoch', open: '17:00', close: '20:00', startH: 17, startM: 0, endH: 20, endM: 0 },
+      4: { name: 'Donnerstag', open: '17:30', close: '20:00', startH: 17, startM: 30, endH: 20, endM: 0 },
+      5: { name: 'Freitag', open: '17:00', close: '19:00', startH: 17, startM: 0, endH: 19, endM: 0 },
+      6: { name: 'Samstag', open: '09:00', close: '16:00', startH: 9, startM: 0, endH: 16, endM: 0 },
+      0: { name: 'Sonntag', open: '10:00', close: '16:00', startH: 10, startM: 0, endH: 16, endM: 0 }
+    };
+
+    function updateOpeningStatus() {
+      const now = new Date();
+      const currentDay = now.getDay();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      
+      const todaySchedule = openingHours[currentDay];
+      const startMinutes = todaySchedule.startH * 60 + todaySchedule.startM;
+      const endMinutes = todaySchedule.endH * 60 + todaySchedule.endM;
+
+      const card = document.getElementById('status-card');
+      const badge = document.getElementById('status-badge');
+      const title = document.getElementById('status-title');
+      const subtitle = document.getElementById('status-subtitle');
+      const icon = document.getElementById('status-icon');
+
+      if (currentMinutes >= startMinutes && currentMinutes < endMinutes) {
+        // Geöffnet
+        const minutesLeft = endMinutes - currentMinutes;
+        const hoursLeft = Math.floor(minutesLeft / 60);
+        const minsRemaining = minutesLeft % 60;
+        let timeLeftStr = hoursLeft > 0 ? `${hoursLeft} Std. und ${minsRemaining} Min.` : `${minsRemaining} Min.`;
+
+        card.className = "rounded-2xl p-5 text-white shadow-md bg-gradient-to-br from-green-500 to-emerald-700 transition-all duration-300";
+        badge.innerText = "Jetzt Geöffnet";
+        title.innerText = "Willkommen!";
+        subtitle.innerText = `Schließt heute um ${todaySchedule.close} Uhr (in ${timeLeftStr}).`;
+        icon.className = "fa-solid fa-door-open";
+      } else {
+        // Geschlossen
+        card.className = "rounded-2xl p-5 text-white shadow-md bg-gradient-to-br from-slate-700 to-slate-900 transition-all duration-300";
+        badge.innerText = "Geschlossen";
+        title.innerText = "Derzeit geschlossen";
+        icon.className = "fa-solid fa-door-closed";
+
+        if (currentMinutes < startMinutes) {
+          subtitle.innerText = `Öffnet heute um ${todaySchedule.open} Uhr.`;
+        } else {
+          const nextDay = (currentDay + 1) % 7;
+          const nextSchedule = openingHours[nextDay];
+          subtitle.innerText = `Öffnet ${nextSchedule.name} um ${nextSchedule.open} Uhr.`;
+        }
+      }
+    }
+
+    function renderHoursList() {
+      const container = document.getElementById('hours-list');
+      const today = new Date().getDay();
+      const daysOrder = [1, 2, 3, 4, 5, 6, 0];
+      
+      container.innerHTML = daysOrder.map(dayIdx => {
+        const item = openingHours[dayIdx];
+        const isToday = dayIdx === today;
+        return `
+          <div class="flex justify-between items-center py-1.5 ${isToday ? 'font-bold text-ios-blue bg-blue-50 px-2 rounded-lg -mx-2' : 'text-ios-subText'}">
+            <span class="flex items-center gap-2">
+              ${isToday ? '<span class="w-1.5 h-1.5 rounded-full bg-ios-blue"></span>' : '<span class="w-1.5 h-1.5"></span>'}
+              ${item.name}
+            </span>
+            <span class="font-mono text-xs">${item.open} - ${item.close} Uhr</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Initialisierung
+    window.onload = function() {
+      updateOpeningStatus();
+      renderHoursList();
+      setInterval(updateOpeningStatus, 60000);
+    };
+  </script>
+</body>
+</html>
