@@ -615,7 +615,7 @@
     function sendClosingNotification(closeTime) {
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification("Stadtbibliothek schließt bald!", {
-          body: `Die Bibliothek schließt in 20 Minuten (um ${closeTime} Uhr). Bitte begeben Sie sich langsam zur Ausleihe.`,
+          body: `Die Bibliothek schließt in 20 Minuten (um ${closeTime} Uhr). Jetzt noch schnell Lesestoff besorgen!.`,
           icon: "https://img.icons8.com/fluent/180/000000/book.png"
         });
       }
