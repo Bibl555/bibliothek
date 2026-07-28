@@ -3,18 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Stadtbibliothek Mobile</title>
+  <title>Stadtbibliothek</title>
 
-  <!-- PWA & iOS Home Screen Einstellungen -->
-  <meta name="apple-mobile-web-app-title" content="Bibliothek">
+  <!-- iOS App Setup & Icon Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  
-  <!-- Automatisches App-Icon auf dem Home-Bildschirm (PNG als Data-URL für iOS) -->
-  <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSU5ErkJggg==">
-  
-  <!-- Web App Manifest für Android & Chrome -->
-  <link rel="manifest" href='data:application/manifest+json,{"name":"Stadtbibliothek","short_name":"Bibliothek","start_url":".","display":"standalone","background_color":"#F2F2F7","theme_color":"#007AFF","icons":[{"src":"data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"192\" height=\"192\" viewBox=\"0 0 180 180\"><rect width=\"180\" height=\"180\" rx=\"40\" fill=\"%23007AFF\"/><text x=\"50%\" y=\"55%\" font-size=\"90\" text-anchor=\"middle\" dominant-baseline=\"middle\">📚</text></svg>","sizes":"192x192","type":"image/svg+xml"}]}'>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Bibliothek">
+  <link rel="apple-touch-icon" href="https://img.icons8.com/fluent/180/000000/book.png">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -80,6 +75,22 @@
       <p id="status-subtitle" class="text-sm mt-3 opacity-90">Analyse der Öffnungszeiten...</p>
     </div>
 
+    <!-- Push-Benachrichtigung Button / status -->
+    <div id="notification-card" class="bg-ios-card rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-blue-50 text-ios-blue flex items-center justify-center text-lg">
+          <i class="fa-solid fa-bell"></i>
+        </div>
+        <div>
+          <h4 class="font-bold text-xs">Schließ-Erinnerung</h4>
+          <p class="text-[11px] text-ios-gray" id="notif-status-text">Erinnerung 20 Min. vor Schluss</p>
+        </div>
+      </div>
+      <button id="notif-btn" onclick="requestNotificationPermission()" class="px-3 py-1.5 bg-ios-blue text-white rounded-xl text-xs font-semibold shadow-sm hover:bg-blue-600 transition">
+        Aktivieren
+      </button>
+    </div>
+
     <!-- Wochenübersicht -->
     <div class="bg-ios-card rounded-2xl p-4 shadow-sm border border-gray-100">
       <h3 class="font-bold text-base mb-3 flex items-center gap-2">
@@ -114,7 +125,7 @@
     &copy; Stadtbibliothek
   </footer>
 
-  <!-- Logik für Öffnungszeiten -->
+  <!-- Logik für Öffnungszeiten & Push-Mitteilung -->
   <script>
     // Öffnungszeiten Definition
     const openingHours = {
@@ -126,6 +137,8 @@
       6: { name: 'Samstag', open: '09:00', close: '16:00', startH: 9, startM: 0, endH: 16, endM: 0 },
       0: { name: 'Sonntag', open: '10:00', close: '16:00', startH: 10, startM: 0, endH: 16, endM: 0 }
     };
+
+    let notificationSentToday = false;
 
     function updateOpeningStatus() {
       const now = new Date();
@@ -154,6 +167,13 @@
         title.innerText = "Willkommen!";
         subtitle.innerText = `Schließt heute um ${todaySchedule.close} Uhr (in ${timeLeftStr}).`;
         icon.className = "fa-solid fa-door-open";
+
+        // Prüfen auf 20 Minuten vor Ladenschluss für Benachrichtigung
+        if (minutesLeft <= 20 && minutesLeft > 0 && !notificationSentToday) {
+          sendClosingNotification(todaySchedule.close);
+          notificationSentToday = true;
+        }
+
       } else {
         // Geschlossen
         card.className = "rounded-2xl p-5 text-white shadow-md bg-gradient-to-br from-slate-700 to-slate-900 transition-all duration-300";
@@ -167,6 +187,7 @@
           const nextDay = (currentDay + 1) % 7;
           const nextSchedule = openingHours[nextDay];
           subtitle.innerText = `Öffnet ${nextSchedule.name} um ${nextSchedule.open} Uhr.`;
+          notificationSentToday = false; // Reset für den nächsten Tag
         }
       }
     }
@@ -191,11 +212,57 @@
       }).join('');
     }
 
+    // Push Notification Logik
+    function checkNotificationStatus() {
+      const btn = document.getElementById('notif-btn');
+      const text = document.getElementById('notif-status-text');
+
+      if (!("Notification" in window)) {
+        text.innerText = "Benachrichtigungen werden von diesem Browser nicht unterstützt.";
+        btn.classList.add('hidden');
+        return;
+      }
+
+      if (Notification.permission === "granted") {
+        text.innerText = "Erinnerung ist aktiv (20 Min. vor Schluss).";
+        btn.innerText = "Aktiviert";
+        btn.disabled = true;
+        btn.className = "px-3 py-1.5 bg-green-100 text-ios-green rounded-xl text-xs font-semibold cursor-default";
+      } else if (Notification.permission === "denied") {
+        text.innerText = "Mitteilungen sind in den iPhone-Einstellungen deaktiviert.";
+        btn.classList.add('hidden');
+      }
+    }
+
+    function requestNotificationPermission() {
+      if (!("Notification" in window)) return;
+
+      Notification.requestPermission().then(permission => {
+        checkNotificationStatus();
+        if (permission === "granted") {
+          new Notification("Stadtbibliothek", {
+            body: "Erinnerung aktiviert! Wir benachrichtigen Sie 20 Minuten vor Ladenschluss.",
+            icon: "https://img.icons8.com/fluent/180/000000/book.png"
+          });
+        }
+      });
+    }
+
+    function sendClosingNotification(closeTime) {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("Stadtbibliothek schließt bald!", {
+          body: `Die Bibliothek schließt in 20 Minuten (um ${closeTime} Uhr). Bitte begeben Sie sich langsam zur Ausleihe/Kasse.`,
+          icon: "https://img.icons8.com/fluent/180/000000/book.png"
+        });
+      }
+    }
+
     // Initialisierung
     window.onload = function() {
       updateOpeningStatus();
       renderHoursList();
-      setInterval(updateOpeningStatus, 60000);
+      checkNotificationStatus();
+      setInterval(updateOpeningStatus, 30000); // Alle 30 Sekunden prüfen
     };
   </script>
 </body>
